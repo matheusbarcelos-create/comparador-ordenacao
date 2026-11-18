@@ -279,7 +279,7 @@ A combinação `(vetor_id, algoritmo)` é única. Se você repetir a comparaçã
 **Listar os vetores cadastrados:**
 
 ```sql
-USE comparador_ordenacao;
+USE estruturaDeDados;
 
 SELECT id, tamanho, dados_desordenados, criado_em
 FROM vetores
