@@ -122,7 +122,7 @@ DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=SUA_SENHA_DO_MYSQL
-DB_NAME=comparador_ordenacao
+DB_NAME=estruturaDeDados
 ```
 
 - `DB_HOST`: endereço do servidor MySQL.
