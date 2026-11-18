@@ -1,0 +1,22 @@
+{
+  "name": "comparador-ordenacao-node-mysql",
+  "version": "1.0.0",
+  "private": true,
+  "description": "12 algoritmos de ordenação com benchmark e persistência em MySQL",
+  "main": "src/cli.js",
+  "scripts": {
+    "start": "node src/cli.js demo",
+    "db:init": "node src/cli.js init",
+    "gerar": "node src/cli.js gerar",
+    "comparar": "node src/cli.js comparar",
+    "ranking": "node src/cli.js ranking",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "mysql2": "^3.11.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
