@@ -1,404 +1,211 @@
-# Comparador de Algoritmos de Ordenação
+# Comparador de 13 Algoritmos de Ordenação — Node.js + MySQL
 
-**Node.js + MySQL | 12 algoritmos | Benchmark de desempenho | Ranking automático**
+Projeto de Estrutura de Dados II que compara **13 algoritmos** utilizando **exatamente o mesmo vetor** armazenado no MySQL.
 
-Projeto desenvolvido para comparar o tempo de execução de **12 métodos de ordenação** utilizando vetores de números inteiros armazenados em um banco de dados MySQL. O programa recupera um vetor desordenado, executa todos os métodos com **cópias dos mesmos dados**, confere os resultados, grava os vetores ordenados e os tempos de execução no banco e gera um **ranking do mais rápido para o mais lento**.
+## Objetivo
 
-> **Importante:** o ranking é gerado com medições realizadas na sua máquina. Não existe uma classificação universal: o desempenho muda conforme o hardware, o tamanho e a distribuição dos vetores.
+1. Gerar **um vetor com 10.000 inteiros positivos**, contendo todos os números de `1` a `10.000`, em ordem aleatória e sem repetição.
+2. Salvar esse vetor **desordenado** na tabela `vetores` do MySQL.
+3. **Ler o vetor de volta do MySQL**, de modo que a fonte da entrada de todos os algoritmos seja a mesma.
+4. Passar uma **cópia idêntica** do vetor para cada uma das 13 funções de ordenação. Uma função não recebe o resultado da outra.
+5. Cronometrar cada ordenação com `process.hrtime.bigint()`, usando **3 execuções por algoritmo** e a **mediana em milissegundos** como tempo do ranking.
+6. Verificar se cada função retornou o vetor corretamente ordenado.
+7. Salvar **13 vetores ordenados**, os tempos e suas medições na tabela `resultados`.
+8. Exibir o **ranking do mais rápido para o mais lento** no terminal e permitir consulta pelo MySQL Workbench.
 
-## Sumário
+> **Não são gerados números negativos ou zero.** Os números são sempre de `1` a `10.000`, inclusive.
 
-- [Funcionalidades](#funcionalidades)
-- [Algoritmos implementados](#algoritmos-implementados)
-- [Tecnologias e requisitos](#tecnologias-e-requisitos)
-- [Estrutura do projeto](#estrutura-do-projeto)
-- [Instalação e configuração](#instalação-e-configuração)
-- [Como executar](#como-executar)
-- [Banco de dados MySQL](#banco-de-dados-mysql)
-- [Como funciona a medição do tempo](#como-funciona-a-medição-do-tempo)
-- [Testes automatizados](#testes-automatizados)
-- [Limitações e cuidados](#limitações-e-cuidados)
-- [Solução de problemas](#solução-de-problemas)
+## Os 13 métodos
 
-## Funcionalidades
+As implementações estão no arquivo [`src/algoritmos.js`](src/algoritmos.js), com uma função de ordenação para cada método:
 
-- Geração de vetores aleatórios e desordenados, com tamanho, intervalo e semente configuráveis.
-- Armazenamento dos vetores originais no **MySQL**.
-- Implementação própria de **12 algoritmos**, um método para cada ordenação.
-- Execução de todos os métodos com o **mesmo vetor de entrada**, sem alterar o original armazenado.
-- Medição de tempo em **milissegundos (ms)** com `process.hrtime.bigint()`.
-- Aquecimento, múltiplas medições e cálculo da **mediana** para reduzir a influência de oscilações isoladas.
-- Verificação automática de que todos os algoritmos produziram a ordenação correta.
-- Gravação dos vetores ordenados, tempos e amostras individuais no banco de dados.
-- Ranking automático, do **menor** para o **maior** tempo.
-- Execução de um vetor específico ou de **todos os vetores** cadastrados.
-- Testes de correção que podem ser executados sem conexão com o MySQL.
+| N.º | Método | Função |
+| ---: | --- | --- |
+| 1 | BubbleSort | `bubbleSort()` |
+| 2 | SelectionSort | `selectionSort()` |
+| 3 | InsertionSort | `insertionSort()` |
+| 4 | ShellSort | `shellSort()` |
+| 5 | QuickSort | `quickSort()` |
+| 6 | IntroSort | `introSort()` |
+| 7 | MergeSort | `mergeSort()` |
+| 8 | CombSort | `combSort()` |
+| 9 | CountingSort | `countingSort()` |
+| 10 | RadixSort | `radixSort()` |
+| 11 | BucketSort | `bucketSort()` |
+| 12 | TimSort | `timSort()` |
+| 13 | CycleSort | `cycleSort()` |
 
-## Algoritmos implementados
+**Nota:** TimSort é uma implementação didática baseada em runs naturais e mesclagem, sem a otimização *galloping*. O ranking compara estas implementações JavaScript, não versões nativas de bibliotecas.
 
-| Nº | Algoritmo | Função no código |
-|:--:|---|---|
-| 1 | Bubble Sort | `bubbleSort()` |
-| 2 | Selection Sort | `selectionSort()` |
-| 3 | Insertion Sort | `insertionSort()` |
-| 4 | Shell Sort | `shellSort()` |
-| 5 | Quick Sort | `quickSort()` |
-| 6 | Merge Sort | `mergeSort()` |
-| 7 | Comb Sort | `combSort()` |
-| 8 | Counting Sort | `countingSort()` |
-| 9 | Radix Sort | `radixSort()` |
-| 10 | Bucket Sort | `bucketSort()` |
-| 11 | Tim Sort | `timSort()` |
-| 12 | Cycle Sort | `cycleSort()` |
-
-Todas as implementações ordenam **em ordem crescente** e retornam o vetor recebido. O `Array.sort()` nativo do JavaScript é usado **somente para verificar** a correção da ordenação e para calcular a mediana das amostras; ele não substitui nenhum dos 12 métodos no comparador.
-
-## Tecnologias e requisitos
-
-| Tecnologia | Finalidade |
-|---|---|
-| **Node.js 18+** | Execução do JavaScript e medição dos algoritmos |
-| **MySQL 8+** | Armazenamento dos vetores e dos resultados |
-| **mysql2** | Comunicação do Node.js com o MySQL |
-| **dotenv** | Leitura das configurações do arquivo `.env` |
-| **npm** | Instalação de dependências e execução dos comandos |
-| **MySQL Workbench (opcional)** | Visualização das tabelas e consultas SQL |
-
-Antes de começar, verifique se o Node.js e o npm estão instalados:
-
-```powershell
-node -v
-npm -v
-```
-
-O serviço do MySQL também precisa estar iniciado e sua conta deve ter permissão para criar bancos e tabelas.
-
-## Estrutura do projeto
+## Estrutura
 
 ```text
-comparador-ordenacao-node/
-│
-├── .env.example            # Modelo para configurar o MySQL
-├── .gitignore              # Protege o .env e ignora node_modules
-├── package.json            # Dependências e comandos npm
-├── README.md               # Documentação do projeto
-│
+comparador-13-metodos-mysql/
+├── .env.example        # Exemplo de credenciais (sem senha real)
+├── .gitignore          # Protege .env e node_modules
+├── package.json
+├── README.md
 ├── sql/
-│   └── schema.sql          # Estrutura das tabelas MySQL
-│
+│   └── schema.sql      # Tabelas vetores e resultados
 ├── src/
-│   ├── algoritmos.js       # Implementações dos 12 algoritmos
-│   ├── benchmark.js        # Cronometragem, mediana e validação
-│   ├── cli.js              # Comandos executados pelo terminal
-│   ├── config.js           # Configurações de conexão
-│   └── database.js         # Consultas SQL e persistência dos dados
-│
+│   ├── algoritmos.js   # As 13 funções de ordenação
+│   └── index.js        # Geração, MySQL, cronômetro e ranking
 └── test/
-    └── algoritmos.test.js  # Testes automatizados
+    └── algoritmos.test.js
 ```
 
-## Instalação e configuração
+## Requisitos
 
-Os comandos abaixo utilizam o **PowerShell**, no Windows. Abra o terminal na pasta onde está o `package.json`.
+- Node.js 18 ou superior;
+- MySQL 8 (ou servidor compatível com o tipo JSON e as consultas usadas);
+- VS Code/PowerShell (opcional, para acompanhar os comandos).
 
-### 1. Instale as dependências
+## Instalação (PowerShell)
+
+Abra o VS Code **na pasta que contém `package.json`** e execute:
 
 ```powershell
 npm install
-```
-
-### 2. Configure o acesso ao MySQL
-
-Crie o arquivo `.env` copiando o modelo:
-
-```powershell
 Copy-Item .env.example .env
 ```
 
-Depois, edite o `.env`:
+Preencha o arquivo `.env` com suas credenciais locais:
 
-```dotenv
+```env
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=SUA_SENHA_DO_MYSQL
-DB_NAME=estruturaDeDados
+DB_PASSWORD=SUA_SENHA_REAL
+DB_NAME=comparador_ordenacao
 ```
 
-- `DB_HOST`: endereço do servidor MySQL.
-- `DB_PORT`: porta de conexão; normalmente `3306`.
-- `DB_USER`: usuário do MySQL.
-- `DB_PASSWORD`: senha desse usuário.
-- `DB_NAME`: nome do banco do projeto.
+**Nunca coloque sua senha real no `.env.example` ou no GitHub.**
 
-**Segurança:** não publique o arquivo `.env` no GitHub e não coloque sua senha diretamente no código. O `.gitignore` já foi configurado para ignorá-lo.
+## Executar
 
-### 3. Crie o banco e as tabelas
+### 1. Criar/verificar banco e tabelas
 
 ```powershell
 npm run db:init
 ```
 
-O comando cria o banco **`comparador_ordenacao`** e as tabelas necessárias, caso ainda não existam. O banco fica separado de outros sistemas que você tenha no MySQL.
-
-## Como executar
-
-### Opção A — Executar o projeto completo
-
-Para criar um vetor de **1.000 números**, comparar os 12 métodos e apresentar o ranking:
+### 2. Gerar um novo vetor, ordenar com os 13 métodos, gravar e exibir ranking
 
 ```powershell
 npm start
 ```
 
-Esse comando também inicializa o banco, se necessário. Cada execução cria um novo registro de vetor.
+Esse comando, em sequência:
+- cria/verifica o banco;
+- gera um único vetor aleatório de 10.000 posições com valores de 1 a 10.000;
+- salva o vetor na tabela `vetores` e recebe seu ID;
+- busca pelo mesmo ID no MySQL;
+- executa as **13 funções**, cada uma com a mesma entrada e sua própria cópia;
+- grava **13 resultados** em `resultados` vinculados ao mesmo ID;
+- apresenta o ranking dos tempos em milissegundos.
 
-### Opção B — Executar por etapas
+O terminal mostra somente os **25 primeiros números** dos vetores antes/depois, para não imprimir 10.000 números; o MySQL armazena os vetores completos.
 
-**1. Gerar um vetor desordenado:**
-
-```powershell
-npm run gerar -- --quantidade 1000
-```
-
-O terminal mostrará o ID do vetor salvo no MySQL (por exemplo, `1`).
-
-Para personalizar os dados:
-
-```powershell
-npm run gerar -- --quantidade 1000 --vetores 3 --min -1000 --max 1000 --semente 12345
-```
-
-| Parâmetro | Descrição | Padrão |
-|---|---|---|
-| `--quantidade` | Quantidade de elementos por vetor | `1000` |
-| `--vetores` | Quantidade de vetores a gerar | `1` |
-| `--min` | Menor número possível | `-1000` |
-| `--max` | Maior número possível | `1000` |
-| `--semente` | Semente para reproduzir os valores gerados | `12345` |
-
-**2. Comparar os 12 algoritmos:**
+### 3. Comparar de novo um vetor que já está salvo
 
 ```powershell
 npm run comparar -- --id 1
 ```
 
-Substitua o `1` pelo **ID real** informado na geração. Para alterar a quantidade de medições por algoritmo:
+Substitua `1` pelo **ID** mostrado por `npm start`. Se você omitir `--id`, utiliza o último vetor cadastrado.
 
-```powershell
-npm run comparar -- --id 1 --repeticoes 7
-```
-
-Para comparar **todos os vetores cadastrados**, cada um com seu próprio ranking:
-
-```powershell
-npm run comparar -- --todos
-```
-
-**3. Consultar o ranking salvo:**
+### 4. Mostrar o ranking salvo
 
 ```powershell
 npm run ranking -- --id 1
 ```
 
-Exemplo **ilustrativo do formato** (as posições e os tempos reais serão calculados pelo programa):
+Se omitir `--id`, mostra o ranking do último vetor cadastrado.
 
-```text
-RANKING DO VETOR 1 (menor mediana em ms = mais rápido):
-
-Posição | Método        | Tempo (ms) | Medições
---------|---------------|------------|---------
-1       | [algoritmo]   | [tempo]    | 7
-2       | [algoritmo]   | [tempo]    | 7
-...     | ...           | ...        | ...
-12      | [algoritmo]   | [tempo]    | 7
-```
-
-O terminal também exibe uma prévia do vetor **antes** e **depois** da ordenação. Para vetores com mais de 25 elementos, a exibição é abreviada, mas **o vetor completo** é salvo no banco.
-
-### Referência rápida dos comandos
-
-| Comando | O que faz |
-|---|---|
-| `npm install` | Instala as dependências |
-| `npm run db:init` | Inicializa o banco e as tabelas |
-| `npm run gerar -- --quantidade 1000` | Gera e salva vetor desordenado |
-| `npm run comparar -- --id 1` | Executa os 12 métodos no vetor informado |
-| `npm run comparar -- --todos` | Compara todos os vetores armazenados |
-| `npm run ranking -- --id 1` | Exibe ranking de um vetor |
-| `npm start` | Executa o fluxo completo de demonstração |
-| `npm test` | Testa os algoritmos sem depender do MySQL |
-
-## Banco de dados MySQL
-
-O sistema utiliza **duas tabelas** com relacionamento de um para muitos:
-
-```text
-vetores (1) ──────────────── (N) resultados
-       id                     vetor_id
-       dados_desordenados      algoritmo
-       tamanho                dados_ordenados
-       criado_em              tempo_ms
-                              repeticoes
-                              amostras_ms
-                              valido
-                              executado_em
-```
-
-### Tabela `vetores`
-
-Armazena os vetores **antes** de serem ordenados:
-
-| Campo | Tipo | Finalidade |
-|---|---|---|
-| `id` | `BIGINT` | Identificador único |
-| `dados_desordenados` | `JSON` | Vetor original |
-| `tamanho` | `INT` | Quantidade de elementos |
-| `criado_em` | `TIMESTAMP` | Data de criação |
-
-### Tabela `resultados`
-
-Armazena o resultado de **cada algoritmo** aplicado a um vetor:
-
-| Campo | Tipo | Finalidade |
-|---|---|---|
-| `id` | `BIGINT` | Identificador único |
-| `vetor_id` | `BIGINT` | ID do vetor de origem |
-| `algoritmo` | `VARCHAR(32)` | Nome do método |
-| `dados_ordenados` | `JSON` | Vetor em ordem crescente |
-| `tempo_ms` | `DOUBLE` | Mediana do tempo de execução em ms |
-| `repeticoes` | `SMALLINT` | Número de medições |
-| `amostras_ms` | `JSON` | Tempos medidos individualmente |
-| `valido` | `TINYINT(1)` | Indica se o resultado foi validado |
-| `executado_em` | `TIMESTAMP` | Data do teste |
-
-A combinação `(vetor_id, algoritmo)` é única. Se você repetir a comparação com o mesmo vetor, o programa **atualizará** os resultados dos 12 métodos, em vez de adicionar registros duplicados.
-
-### Consultas no MySQL Workbench
-
-**Listar os vetores cadastrados:**
-
-```sql
-USE estruturaDeDados;
-
-SELECT id, tamanho, dados_desordenados, criado_em
-FROM vetores
-ORDER BY id DESC;
-```
-
-**Consultar os vetores ordenados e seus tempos:**
-
-```sql
-SELECT vetor_id, algoritmo, dados_ordenados, tempo_ms
-FROM resultados
-WHERE vetor_id = 1
-ORDER BY tempo_ms ASC;
-```
-
-**Gerar um ranking numerado do mais rápido ao mais lento:**
-
-```sql
-SELECT
-    ROW_NUMBER() OVER (ORDER BY tempo_ms ASC, algoritmo ASC) AS posicao,
-    algoritmo,
-    ROUND(tempo_ms, 6) AS tempo_ms,
-    repeticoes
-FROM resultados
-WHERE vetor_id = 1 AND valido = 1
-ORDER BY tempo_ms ASC, algoritmo ASC;
-```
-
-**Cadastrar um vetor manualmente pelo SQL:**
-
-```sql
-INSERT INTO vetores (dados_desordenados, tamanho)
-VALUES ('[8, 3, 9, 1, 5, 2]', 6);
-
-SELECT LAST_INSERT_ID() AS novo_vetor_id;
-```
-
-Depois, utilize o `novo_vetor_id` retornado para executar `npm run comparar -- --id ID` no terminal. O vetor ordenado esperado para o exemplo é `[1, 2, 3, 5, 8, 9]`.
-
-## Como funciona a medição do tempo
-
-O fluxo interno de uma comparação segue estas etapas:
-
-```text
-[MySQL: vetor desordenado]
-             |
-             v
-[Node.js: cria cópias do mesmo vetor]
-             |
-             v
-[Executa 2 aquecimentos por algoritmo]
-             |
-             v
-[Executa 7 medições por algoritmo (padrão)]
-             |
-             v
-[Confere se cada vetor está corretamente ordenado]
-             |
-             v
-[Calcula a mediana dos tempos em ms]
-             |
-             v
-[MySQL: salva resultados e tempos]
-             |
-             v
-[Ranking: menor mediana -> maior mediana]
-```
-
-A duração de cada ordenação é obtida usando o relógio de alta resolução do Node.js:
-
-```javascript
-const inicio = process.hrtime.bigint();
-const resultado = ordenar(copia);
-const tempoMs = Number(process.hrtime.bigint() - inicio) / 1_000_000;
-```
-
-A cópia do vetor é criada **antes** de iniciar o cronômetro. A validação, as consultas SQL e a escrita no MySQL também ficam **fora** da medição. A ordem dos métodos é alterada entre as rodadas para reduzir o viés de executar sempre o mesmo algoritmo primeiro.
-
-**Por que a mediana?** Ela representa o valor central das medições e é menos sensível a picos ocasionais de tempo do que uma média simples. Assim, o ranking considera as mesmas condições de entrada e a mediana obtida para cada método.
-
-## Testes automatizados
-
-Para verificar a correção das implementações, execute:
+### 5. Rodar os testes
 
 ```powershell
 npm test
 ```
 
-Os testes cobrem vetores vazios, vetores com um único valor, dados já ordenados, ordem inversa, números negativos, repetições e vetores aleatórios. Também verificam se o benchmark retorna os resultados esperados sem modificar o vetor original.
+Os testes verificam os 13 algoritmos, as características do gerador e a comparação usando o mesmo vetor, inclusive com 10.000 posições. **Os testes automáticos não exigem conexão MySQL**; para validar a integração com o seu servidor, execute `npm start` com o banco ativo.
 
-**Esses testes não precisam do MySQL.** Para testar a integração com o banco, configure `.env` e execute o fluxo de geração e comparação.
+## Como o tempo é medido?
 
-## Limitações e cuidados
+```javascript
+const copia = [...original];  // MESMA entrada, não cronometrada
+const inicio = process.hrtime.bigint();
+const ordenado = ordenar(copia); // função de ordenação
+const fim = process.hrtime.bigint();
+const tempoMs = Number(fim - inicio) / 1_000_000;
+```
 
-- A geração pela CLI aceita de **1 a 10.000 elementos por vetor**, com até **100 vetores** por execução.
-- A amplitude do intervalo de valores deve ser de, no máximo, **1.000.000**; isso evita uso excessivo de memória no Counting Sort.
-- Os algoritmos operam sobre **números inteiros seguros** do JavaScript. O Radix Sort também suporta números negativos.
-- Bubble Sort, Selection Sort e Cycle Sort podem ser lentos com vetores grandes por apresentarem comportamento quadrático em muitos cenários.
-- O **Tim Sort** implementado é uma versão **didática**, sem a otimização *galloping* do algoritmo completo. Seus tempos não devem ser confundidos com os do sort nativo de outras linguagens.
-- O Bucket Sort utiliza baldes de largura uniforme e o Insertion Sort para ordenar o conteúdo de cada balde.
-- Resultados muito próximos podem trocar de posição de uma execução para outra. Para comparação mais confiável, execute várias vezes e evite tarefas pesadas em segundo plano.
-- A tabela `resultados` mantém o **último benchmark por algoritmo e por vetor**; o histórico de várias execuções do mesmo par não é preservado.
+Cada método é executado 3 vezes sobre cópias novas da mesma entrada. A **mediana** das três medições define o ranking. A gravação/consulta no MySQL, a geração das cópias e a validação de correção **não fazem parte do tempo medido**.
 
-## Solução de problemas
+> **Atenção:** os tempos variam conforme computador, execução e ambiente do Node.js. O ranking é referente a estas implementações e à entrada usada; não existe uma ordem fixa garantida entre todos os métodos. Os algoritmos quadráticos, como BubbleSort e CycleSort, podem demorar mais com 10.000 elementos.
 
-| Problema | O que verificar |
-|---|---|
-| `node` ou `npm` não é reconhecido | Instale o Node.js e reabra o terminal |
-| `ER_ACCESS_DENIED_ERROR` | Confira `DB_USER` e `DB_PASSWORD` no `.env` |
-| `ECONNREFUSED` | Confirme que o servidor MySQL está iniciado e que a porta está correta |
-| `ER_BAD_DB_ERROR` | Execute `npm run db:init` |
-| `Vetor de ID ... não encontrado` | Gere um vetor e utilize o ID exibido no terminal |
-| Ranking sem resultados | Rode `npm run comparar -- --id ID` antes de consultar o ranking |
-| Tempo muito alto | Experimente um vetor menor: `--quantidade 100` |
+## Consultas no MySQL Workbench
 
----
+### Vetores desordenados cadastrados
 
-### Objetivo do projeto
+```sql
+USE comparador_ordenacao;
+SELECT id, tamanho, criado_em, dados_desordenados
+FROM vetores
+ORDER BY id DESC;
+```
 
-Demonstrar, de forma prática, como diferentes algoritmos de ordenação se comportam diante de **um mesmo conjunto de dados**, relacionando **estruturas de dados, análise de algoritmos, JavaScript e persistência em MySQL**.
+### Ranking: mais rápido para mais lento
 
-**Desenvolvido para fins de estudo, experimentação e comparação de desempenho.**
+```sql
+USE comparador_ordenacao;
+SELECT algoritmo, tempo_ms, repeticoes, dados_ordenados
+FROM resultados
+WHERE vetor_id = 1
+ORDER BY tempo_ms ASC;
+```
+
+Troque `vetor_id = 1` pelo ID real. São esperadas **13 linhas**, uma para cada método.
+
+### Conferir que os 13 resultados têm exatamente 10.000 números
+
+```sql
+SELECT algoritmo, JSON_LENGTH(dados_ordenados) AS quantidade, tempo_ms
+FROM resultados
+WHERE vetor_id = 1
+ORDER BY tempo_ms ASC;
+```
+
+### Mostrar as 3 medições de cada algoritmo
+
+```sql
+SELECT algoritmo, tempo_ms, amostras_ms
+FROM resultados
+WHERE vetor_id = 1
+ORDER BY tempo_ms ASC;
+```
+
+## Reutilização do banco existente
+
+Esta versão utiliza os **mesmos nomes de tabelas e campos** do projeto anterior (`comparador_ordenacao`, `vetores`, `resultados`). Não apaga registros antigos e não precisa recriar as tabelas se já estiverem corretas.
+
+**Importante:** para assegurar o trabalho com **10.000 inteiros positivos**, o comando de comparação rejeita vetores antigos de outro tamanho ou que contenham zero/números negativos. Execute `npm start` para gerar um novo ID válido.
+
+## Atualizar o GitHub sem enviar a senha
+
+O `.gitignore` já exclui `.env` e `node_modules/`. Antes do push, confira:
+
+```powershell
+git check-ignore .env
+git ls-files .env
+```
+
+O primeiro comando deve imprimir `.env` e o segundo deve ficar vazio. Depois:
+
+```powershell
+git add .
+git commit -m "Simplifica comparador para 13 metodos com vetor unico de 10000 numeros"
+git push origin main
+```
+
+Se o `.env` já foi versionado antes, execute `git rm --cached .env` e faça commit da remoção; se a senha já foi publicada, troque-a no MySQL.

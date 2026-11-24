@@ -1,7 +1,9 @@
 'use strict';
 
-// Os algoritmos trabalham em ordem crescente, modificam o vetor recebido
-// e retornam a referência ao mesmo vetor. Não utilizam Array.sort().
+// Cada um dos 13 métodos é uma função independente de ordenação crescente.
+// Recebe uma cópia do MESMO vetor vindo do MySQL, modifica e retorna essa cópia.
+// Nenhuma função utiliza Array.sort() para ordenar.
+// O programa só envia valores inteiros positivos de 1 a 10.000.
 function trocar(a, i, j) {
   [a[i], a[j]] = [a[j], a[i]];
 }
@@ -95,6 +97,82 @@ function quickSort(a) {
   return a;
 }
 
+// IntroSort: QuickSort com partição em 3 vias + HeapSort no limite de
+// profundidade + InsertionSort para partições pequenas. Não usa Array.sort().
+function introSort(a) {
+  const n = a.length;
+  if (n < 2) return a;
+  const LIMITE_INSERCAO = 16;
+  const profundidadeMaxima = 2 * Math.floor(Math.log2(n));
+
+  function insertionIntervalo(inicio, fim) {
+    for (let i = inicio + 1; i <= fim; i++) {
+      const valor = a[i];
+      let j = i - 1;
+      while (j >= inicio && a[j] > valor) {
+        a[j + 1] = a[j];
+        j--;
+      }
+      a[j + 1] = valor;
+    }
+  }
+
+  // HeapSort aplicado somente ao segmento [inicio, fim], sem criar cópias.
+  function heapIntervalo(inicio, fim) {
+    const tamanho = fim - inicio + 1;
+    function descer(raiz, limite) {
+      while (2 * raiz + 1 < limite) {
+        let filho = 2 * raiz + 1;
+        if (filho + 1 < limite && a[inicio + filho] < a[inicio + filho + 1]) filho++;
+        if (a[inicio + raiz] >= a[inicio + filho]) break;
+        trocar(a, inicio + raiz, inicio + filho);
+        raiz = filho;
+      }
+    }
+    for (let i = Math.floor(tamanho / 2) - 1; i >= 0; i--) descer(i, tamanho);
+    for (let final = tamanho - 1; final > 0; final--) {
+      trocar(a, inicio, inicio + final);
+      descer(0, final);
+    }
+  }
+
+  // Pilha explícita limita o uso de stack em vetores extensos.
+  const pilha = [[0, n - 1, profundidadeMaxima]];
+  while (pilha.length) {
+    let [esq, dir, profundidade] = pilha.pop();
+    while (dir - esq + 1 > LIMITE_INSERCAO) {
+      if (profundidade === 0) {
+        heapIntervalo(esq, dir);
+        esq = dir; // intervalo já ordenado
+        break;
+      }
+      profundidade--;
+      const pivo = medianaDeTres(a[esq], a[esq + Math.floor((dir - esq) / 2)], a[dir]);
+      let menor = esq;
+      let atual = esq;
+      let maior = dir;
+      while (atual <= maior) {
+        if (a[atual] < pivo) trocar(a, menor++, atual++);
+        else if (a[atual] > pivo) trocar(a, atual, maior--);
+        else atual++;
+      }
+      // A parte com valores iguais ao pivô já está na posição correta.
+      // Continua com a partição menor; empilha a maior.
+      const esqFim = menor - 1;
+      const dirInicio = maior + 1;
+      if (esqFim - esq < dir - dirInicio) {
+        if (dirInicio < dir) pilha.push([dirInicio, dir, profundidade]);
+        dir = esqFim;
+      } else {
+        if (esq < esqFim) pilha.push([esq, esqFim, profundidade]);
+        esq = dirInicio;
+      }
+    }
+    if (esq < dir) insertionIntervalo(esq, dir);
+  }
+  return a;
+}
+
 function mergeSort(a) {
   const n = a.length;
   if (n < 2) return a;
@@ -159,15 +237,21 @@ function countingSort(a) {
   return a;
 }
 
-function radixNaoNegativo(a) {
+function radixSort(a) {
+  // RadixSort LSD (base 10) para inteiros positivos, sem Array.sort().
   if (a.length < 2) return a;
   let maximo = 0;
-  for (const valor of a) if (valor > maximo) maximo = valor;
+  for (const valor of a) {
+    if (!Number.isSafeInteger(valor) || valor < 1) {
+      throw new RangeError('RadixSort exige números inteiros positivos (maiores que zero).');
+    }
+    if (valor > maximo) maximo = valor;
+  }
   let origem = a;
   let destino = new Array(a.length);
   for (let exp = 1; Math.floor(maximo / exp) > 0; exp *= 10) {
     const contagem = new Array(10).fill(0);
-    for (const num of origem) contagem[Math.floor(num / exp) % 10]++;
+    for (const numero of origem) contagem[Math.floor(numero / exp) % 10]++;
     for (let i = 1; i < 10; i++) contagem[i] += contagem[i - 1];
     for (let i = origem.length - 1; i >= 0; i--) {
       const digito = Math.floor(origem[i] / exp) % 10;
@@ -175,19 +259,7 @@ function radixNaoNegativo(a) {
     }
     [origem, destino] = [destino, origem];
   }
-  return origem;
-}
-
-function radixSort(a) {
-  // Negativos em valor absoluto, invertidos no fim; positivos normalmente.
-  const negativos = [];
-  const naoNegativos = [];
-  for (const n of a) (n < 0 ? negativos : naoNegativos).push(n < 0 ? -n : n);
-  const negOrdenados = radixNaoNegativo(negativos);
-  const posOrdenados = radixNaoNegativo(naoNegativos);
-  let indice = 0;
-  for (let i = negOrdenados.length - 1; i >= 0; i--) a[indice++] = -negOrdenados[i];
-  for (const n of posOrdenados) a[indice++] = n;
+  for (let i = 0; i < a.length; i++) a[i] = origem[i];
   return a;
 }
 
@@ -211,7 +283,16 @@ function bucketSort(a) {
   }
   let p = 0;
   for (const balde of baldes) {
-    insertionSort(balde);
+    // Inserção local a cada balde, sem chamar outro método do ranking.
+    for (let i = 1; i < balde.length; i++) {
+      const valor = balde[i];
+      let j = i - 1;
+      while (j >= 0 && balde[j] > valor) {
+        balde[j + 1] = balde[j];
+        j--;
+      }
+      balde[j + 1] = valor;
+    }
     for (const valor of balde) a[p++] = valor;
   }
   return a;
@@ -337,6 +418,7 @@ const algoritmos = {
   InsertionSort: insertionSort,
   ShellSort: shellSort,
   QuickSort: quickSort,
+  IntroSort: introSort,
   MergeSort: mergeSort,
   CombSort: combSort,
   CountingSort: countingSort,
@@ -347,4 +429,4 @@ const algoritmos = {
 };
 
 module.exports = { algoritmos, bubbleSort, selectionSort, insertionSort, shellSort,
-  quickSort, mergeSort, combSort, countingSort, radixSort, bucketSort, timSort, cycleSort };
+  quickSort, introSort, mergeSort, combSort, countingSort, radixSort, bucketSort, timSort, cycleSort };

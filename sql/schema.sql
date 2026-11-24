@@ -1,4 +1,4 @@
--- Executado dentro do banco definido por DB_NAME (criado automaticamente em db:init).
+-- Compatível com o banco da versão anterior (comparador_ordenacao).
 CREATE TABLE IF NOT EXISTS vetores (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   dados_desordenados JSON NOT NULL,

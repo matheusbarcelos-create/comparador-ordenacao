@@ -1,15 +1,10 @@
-# Senhas e configurações privadas
+# Credenciais locais
 .env
 .env.*
 !.env.example
 
-# Dependências do Node.js
+# Dependências e temporários
 node_modules/
-
-# Arquivos de log
 *.log
-npm-debug.log*
-
-# Arquivos temporários
 .DS_Store
 Thumbs.db
